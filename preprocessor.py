@@ -3,25 +3,32 @@ import subprocess
 import numpy as np
 import os
 
-def fileToNpArray(f):
-    size = 30*f.getframerate()
-    base = []
-    print(size)
-    for n in range(0,size):
-        i = int.from_bytes(f.readframes(1), byteorder='little', signed=True)
-        base.append(i)
-    return np.array(base)
+def fileToNpArray(f, size):
+    #size = 30*f.getframerate()
+    res = []
+    frames = []
+    frame = f.readframes(1)
+    while frame != b'':
+        frames.append(frame)
+        frame = f.readframes(1)
+    for n_sample in range(0, len(frames), size):
+        sample_base = []
+        for sample in frames[n_sample:(n_sample+size)]:
+            i = int.from_bytes(sample, byteorder='little', signed=True)
+            i = i / 32767 #Turn the amplitude into a float between -1.0 and 1.0
+            # This transformation is reversed in the postprocessor
+            sample_base.append(i)
+        res.append(sample_base)
+    return np.array(res)
 
 def transcodeFile(filename):
-    f = wave.open(filename, 'rb')
     fname, fextension = os.path.splitext(filename)
     outname = fname + '-conv.wav'
-    f.close()
     with open(os.devnull, 'w') as devnull:
-        subprocess.run(['sox', filename, outname, 'channels', '1', ])#, stdout=devnull, stderr=devnull)
+        subprocess.run(['sox', filename, outname, 'channels', '1'])#, stdout=devnull, stderr=devnull)
     return outname
 
-def wavToNumpy(filename):
+def wavToNumpy(filename, size):
     outname = transcodeFile(filename)
     with wave.open(outname) as f:
-        return fileToNpArray(f)
+        return fileToNpArray(f, size)
