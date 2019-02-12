@@ -9,6 +9,8 @@ def numpyToWav(data, outname):
         f.setparams((channels, samplewidth, framerate, 0, 'NONE', 'not compressed'))
         for sample in data:
             for frame in sample.flatten().tolist():
+                frame = frame * 2
+                frame = frame - 1
                 frame = round(frame * 32767) # Reverse the transformation from the preprocessor
                 f.writeframes((frame.to_bytes(2, byteorder='little', signed=True)))
 

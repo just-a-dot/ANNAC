@@ -40,7 +40,6 @@ for arg in sys.argv[1:]:
     names.append(arg)
     i += 1
 
-#Training happens here
 wavs_trans = []
 for song in wavs:
     for sample in song:
@@ -52,11 +51,13 @@ x_train = np.asarray(wavs_trans[:(round(0.9*len(wavs_trans)))])
 x_test = np.asarray(wavs_trans[(round(0.9*len(wavs_trans))):])
 
 
-autoencoder.fit(x_train, x_train, epochs=1, validation_data=(x_test, x_test))
+#Training happens here
+autoencoder.fit(x_train, x_train, epochs=3, validation_data=(x_test, x_test))
 
 #Reassemble wavs
 for i in range(0, len(wavs)):
     base = []
+    print("Processing song " + str(i) + " of " + str(len(wavs)))
     for sample in wavs[i]:
         if len(sample) != size:
             continue
@@ -64,3 +65,5 @@ for i in range(0, len(wavs)):
         decoded_wav = decoder.predict(encoded_wav)
         base.append(decoded_wav)
     postprocessor.numpyToWav(base, names[i] + '-out.wav')
+
+autoencoder.save('model.h5')

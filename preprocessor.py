@@ -16,6 +16,8 @@ def fileToNpArray(f, size):
         for sample in frames[n_sample:(n_sample+size)]:
             i = int.from_bytes(sample, byteorder='little', signed=True)
             i = i / 32767 #Turn the amplitude into a float between -1.0 and 1.0
+            i = i + 1
+            i = i / 2
             # This transformation is reversed in the postprocessor
             sample_base.append(i)
         res.append(sample_base)
