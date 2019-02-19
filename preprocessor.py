@@ -4,7 +4,6 @@ import numpy as np
 import os
 
 def fileToNpArray(f, size):
-    #size = 30*f.getframerate()
     res = []
     frames = []
     frame = f.readframes(1)

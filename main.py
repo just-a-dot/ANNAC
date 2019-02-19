@@ -4,66 +4,63 @@ import sys
 
 import numpy as np
 
-from keras.models import Model
-from keras.layers import Input, Dense
+from keras.models import Model, Sequential
+from keras.layers import Input, Dense, LSTM, RepeatVector, TimeDistributed
 
 if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
     exit()
 
 # Size of the samples. Decides network size, ram usage increses exponentially with this
-size = round(22050 * 1)
+size = round(22050 * 0.5)
 
-input_layer = Input(shape=(size,))
-
-encoded = Dense(size//10, activation='relu', kernel_initializer='random_uniform')(input_layer)
-
-decoded = Dense(size, activation='sigmoid', kernel_initializer='random_uniform')(encoded)
-
-autoencoder = Model(input_layer, decoded)
-
-encoder = Model(input_layer, encoded)
-
-encoded_input = Input(shape=(size//10,))
-decoder_layer = autoencoder.layers[-1]
-decoder = Model(encoded_input, decoder_layer(encoded_input))
-
-autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
 
 #Read the files given as arguments
 wavs = []
 names = []
-i = 0
+i = 1
 for arg in sys.argv[1:]:
     print("Reading file " + str(i) + "/" + str(len(sys.argv[1:])))
     wavs.append(preprocessor.wavToNumpy(arg, size))
     names.append(arg)
     i += 1
 
-wavs_trans = []
+
+song_length = len(wavs[0])
+
+sequence = np.zeros((len(wavs), song_length, size))
+song_i = 0
 for song in wavs:
+    sample_i = 0
     for sample in song:
-        if len(sample) != size:
-            continue
-        wavs_trans.append(sample)
+        if(len(sample) == size):
+            sequence[song_i][sample_i] = sample
+        sample_i += 1
+    song_i += 1
 
-x_train = np.asarray(wavs_trans[:(round(0.9*len(wavs_trans)))])
-x_test = np.asarray(wavs_trans[(round(0.9*len(wavs_trans))):])
+print(sequence.shape)
 
+inputs = Input(shape=(song_length, size))
+encoded = LSTM(size//10)(inputs)
 
-#Training happens here
-autoencoder.fit(x_train, x_train, epochs=3, validation_data=(x_test, x_test))
+decoded = RepeatVector(song_length)(encoded)
+decoded = LSTM(size, return_sequences=True)(decoded)
+
+autoencoder = Model(inputs, decoded)
+encoder = Model(inputs, encoded)
+
+autoencoder.compile(optimizer='RMSprop', loss='mse')
+
+x_train = np.asarray(sequence[:(round(0.9*len(sequence)))])
+x_test = np.asarray(sequence[(round(0.9*len(sequence))):])
+
+autoencoder.fit(x_train, x_train, epochs=100, validation_data=(x_test, x_test))
 
 #Reassemble wavs
 for i in range(0, len(wavs)):
-    base = []
     print("Processing song " + str(i) + " of " + str(len(wavs)))
-    for sample in wavs[i]:
-        if len(sample) != size:
-            continue
-        encoded_wav = encoder.predict(np.expand_dims(sample, axis=0), batch_size=1)
-        decoded_wav = decoder.predict(encoded_wav)
-        base.append(decoded_wav)
-    postprocessor.numpyToWav(base, names[i] + '-out.wav')
+    encoded_wav = autoencoder.predict(wavs[i].reshape((wavs[i].shape[0], )), batch_size=1)
+    #decoded_wav = decoder.predict(encoded_wav)
+    postprocessor.numpyToWav(encoded_wav, names[i] + '-out.wav')
 
 autoencoder.save('model.h5')
