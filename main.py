@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 from keras.models import Model, Sequential
-from keras.layers import Input, Dense, Conv1D, Flatten, TimeDistributed
+from keras.layers import Input, Dense, Conv1D, MaxPooling1D, UpSampling1D, TimeDistributed
 
 if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
@@ -45,10 +45,14 @@ for song in wavs:
 print(sequence.shape)
 
 inputs = Input(shape=(song_length, size))
-encoded = Conv1D(song_length//10, 10, input_shape=(song_length, size), padding='causal', activation='relu')(inputs)
-#encoded = Flatten()(encoded)
 
-decoded = TimeDistributed(Dense(1, activation='sigmoid'))(encoded)
+# encoder
+enconv = Conv1D(song_length//10, 10, input_shape=(song_length, size), padding='causal', activation='relu')(inputs)
+encoded = MaxPooling1D(pool_size=5)(enconv)
+
+# decoder
+deconv = Conv1D(song_length//10, 10, input_shape=(song_length, size), padding='causal', activation='relu')(enconv)
+decoded = UpSampling1D(5)(deconv)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
@@ -59,7 +63,7 @@ autoencoder.compile(optimizer='RMSprop', loss='mse')
 x_train = np.asarray(sequence[:(round(0.9*len(sequence)))])
 x_test = np.asarray(sequence[(round(0.9*len(sequence))):])
 
-autoencoder.fit(x_train, x_train, epochs=10, batch_size = 1, validation_data=(x_test, x_test))
+autoencoder.fit(x_train, x_train, epochs=1, batch_size = 1, validation_data=(x_test, x_test))
 autoencoder.save('model.h5')
 
 #Reassemble wavs
