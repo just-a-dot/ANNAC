@@ -11,7 +11,7 @@ if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
     exit()
 
-# Size of the samples. Decides network size, ram usage increses exponentially with this
+# Size of the samples. Decides network size, ram usage increases exponentially with this
 size = round(22050 * 1)
 
 input_layer = Input(shape=(size,))
@@ -28,7 +28,7 @@ encoded_input = Input(shape=(size//10,))
 decoder_layer = autoencoder.layers[-1]
 decoder = Model(encoded_input, decoder_layer(encoded_input))
 
-autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+autoencoder.compile(optimizer='adadelta', loss='mean_squared_error') 
 
 #Read the files given as arguments
 wavs = []
