@@ -5,33 +5,7 @@ import sys
 import numpy as np
 
 from keras.models import Model, Sequential
-from keras.layers import Input, Dense, LSTM, RepeatVector, TimeDistributed
-
-def get_model_memory_usage(batch_size, model):
-    import numpy as np
-    from keras import backend as K
-
-    shapes_mem_count = 0
-    for l in model.layers:
-        single_layer_mem = 1
-        for s in l.output_shape:
-            if s is None:
-                continue
-            single_layer_mem *= s
-        shapes_mem_count += single_layer_mem
-
-    trainable_count = np.sum([K.count_params(p) for p in set(model.trainable_weights)])
-    non_trainable_count = np.sum([K.count_params(p) for p in set(model.non_trainable_weights)])
-
-    number_size = 4.0
-    if K.floatx() == 'float16':
-         number_size = 2.0
-    if K.floatx() == 'float64':
-         number_size = 8.0
-
-    total_memory = number_size*(batch_size*shapes_mem_count + trainable_count + non_trainable_count)
-    gbytes = np.round(total_memory / (1024.0 ** 3), 3)
-    return gbytes
+from keras.layers import Input, Dense, Conv1D, Flatten, TimeDistributed
 
 if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
@@ -53,7 +27,7 @@ for arg in sys.argv[1:]:
     i += 1
 
 
-song_length = (22050*5)
+song_length = (22050*4)
 print(song_length)
 
 sequence = np.zeros((len(wavs), song_length, size))
@@ -69,32 +43,32 @@ for song in wavs:
     song_i += 1
 
 print(sequence.shape)
-memory_size = 100
 
 inputs = Input(shape=(song_length, size))
-encoded = LSTM(memory_size)(inputs)
+encoded = Conv1D(song_length//10, 10, input_shape=(song_length, size), padding='causal', activation='relu')(inputs)
+#encoded = Flatten()(encoded)
 
-decoded = RepeatVector(song_length)(encoded)
-decoded = LSTM(memory_size, return_sequences=True)(decoded)
-decoded = TimeDistributed(Dense(1, activation='sigmoid'))(decoded)
+decoded = TimeDistributed(Dense(1, activation='sigmoid'))(encoded)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
 
 autoencoder.compile(optimizer='RMSprop', loss='mse')
 
-print(get_model_memory_usage(1, autoencoder))
 
 x_train = np.asarray(sequence[:(round(0.9*len(sequence)))])
 x_test = np.asarray(sequence[(round(0.9*len(sequence))):])
 
-autoencoder.fit(x_train, x_train, epochs=100, batch_size = 1, validation_data=(x_test, x_test))
+autoencoder.fit(x_train, x_train, epochs=10, batch_size = 1, validation_data=(x_test, x_test))
 autoencoder.save('model.h5')
 
 #Reassemble wavs
 for i in range(0, len(wavs)):
     print("Processing song " + str(i) + " of " + str(len(wavs)))
-    encoded_wav = autoencoder.predict(wavs[i].reshape((wavs[i].shape[0], )), batch_size=1)
+    print(wavs[i].shape)
+    temp = wavs[i][:song_length].reshape(1, song_length, 1)
+    encoded_wav = autoencoder.predict((temp), batch_size=1)
     #decoded_wav = decoder.predict(encoded_wav)
+    print(encoded_wav.shape)
     postprocessor.numpyToWav(encoded_wav, names[i] + '-out.wav')
 
