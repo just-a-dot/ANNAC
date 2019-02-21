@@ -26,6 +26,8 @@ def fileToNpArray(f, size):
 def transcodeFile(filename):
     fname, fextension = os.path.splitext(filename)
     outname = fname + '-conv.wav'
+    if(os.path.isfile(outname)):
+        return outname
     with open(os.devnull, 'w') as devnull:
         subprocess.run(['sox', filename, outname, 'channels', '1'])#, stdout=devnull, stderr=devnull)
     return outname
