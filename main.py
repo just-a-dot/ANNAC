@@ -6,6 +6,7 @@ import numpy as np
 
 from keras.models import Model, Sequential
 from keras.layers import Input, Dense, Conv1D, MaxPooling1D, UpSampling1D
+from keras.utils import np_utils, plot_model, print_summary
 
 if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
@@ -45,29 +46,25 @@ inputs = Input(shape=(song_length,size))
 
 # encoder
 x = Conv1D(song_length//10, 10, activation='relu', padding='same')(inputs)
-x = MaxPooling1D()(x)
-x = Conv1D(song_length//10, 10, activation='relu', padding='same')(x)
-x = MaxPooling1D()(x)
-x = Conv1D(song_length//10, 10, activation='relu', padding='same')(x)
 encoded = MaxPooling1D()(x)
 
 # decoder
 x = Conv1D(song_length//10, 10, activation='relu', padding='same')(encoded)
 x = UpSampling1D()(x)
-x = Conv1D(song_length//10, 10, activation='relu', padding='same')(x)
-x = UpSampling1D()(x)
-x = Conv1D(song_length//10, 10, activation='relu')(x)
-x = UpSampling1D()(x)
+
 decoded = Conv1D(1, 10, activation='sigmoid', padding='same')(x)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
+
+print_summary(autoencoder)
 
 autoencoder.compile(optimizer='adam', loss='mean_squared_error')
 
 x_train = np.asarray(sequence[:(round(0.9*len(sequence)))])
 x_test = np.asarray(sequence[(round(0.9*len(sequence))):])
 
+print("Training...")
 autoencoder.fit(x_train, x_train, epochs=1, batch_size = 1, validation_data=(x_test, x_test))
 
 #Reassemble wavs
