@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 from keras.models import Model, Sequential
-from keras.layers import Input, Dense, Conv1D, MaxPooling1D, UpSampling1D, TimeDistributed
+from keras.layers import Input, Dense, Conv1D, MaxPooling1D, UpSampling1D
 
 if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
@@ -28,7 +28,6 @@ for arg in sys.argv[1:]:
 
 
 song_length = (22050*4)
-print(song_length)
 
 sequence = np.zeros((len(wavs), song_length, size))
 song_i = 0
@@ -42,29 +41,34 @@ for song in wavs:
             break
     song_i += 1
 
-print(sequence.shape)
-
-inputs = Input(shape=(song_length, size))
+inputs = Input(shape=(song_length,size)) 
 
 # encoder
-enconv = Conv1D(song_length//10, 10, input_shape=(song_length, size), padding='causal', activation='relu')(inputs)
-encoded = MaxPooling1D(pool_size=5)(enconv)
+x = Conv1D(song_length//10, 10, activation='relu', padding='same')(inputs)
+x = MaxPooling1D()(x)
+x = Conv1D(song_length//10, 10, activation='relu', padding='same')(x)
+x = MaxPooling1D()(x)
+x = Conv1D(song_length//10, 10, activation='relu', padding='same')(x)
+encoded = MaxPooling1D()(x)
 
 # decoder
-deconv = Conv1D(song_length//10, 10, input_shape=(song_length, size), padding='causal', activation='relu')(enconv)
-decoded = UpSampling1D(5)(deconv)
+x = Conv1D(song_length//10, 10, activation='relu', padding='same')(encoded)
+x = UpSampling1D()(x)
+x = Conv1D(song_length//10, 10, activation='relu', padding='same')(x)
+x = UpSampling1D()(x)
+x = Conv1D(song_length//10, 10, activation='relu')(x)
+x = UpSampling1D()(x)
+decoded = Conv1D(1, 10, activation='sigmoid', padding='same')(x)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
 
-autoencoder.compile(optimizer='RMSprop', loss='mse')
-
+autoencoder.compile(optimizer='adam', loss='mean_squared_error')
 
 x_train = np.asarray(sequence[:(round(0.9*len(sequence)))])
 x_test = np.asarray(sequence[(round(0.9*len(sequence))):])
 
 autoencoder.fit(x_train, x_train, epochs=1, batch_size = 1, validation_data=(x_test, x_test))
-autoencoder.save('model.h5')
 
 #Reassemble wavs
 for i in range(0, len(wavs)):
@@ -75,4 +79,3 @@ for i in range(0, len(wavs)):
     #decoded_wav = decoder.predict(encoded_wav)
     print(encoded_wav.shape)
     postprocessor.numpyToWav(encoded_wav, names[i] + '-out.wav')
-
