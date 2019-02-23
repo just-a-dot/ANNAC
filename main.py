@@ -8,6 +8,8 @@ import numpy as np
 from keras.models import Model, load_model
 from keras.layers import Input, Dense
 from keras.callbacks import ModelCheckpoint
+from keras.utils import print_summary
+
 
 if len(sys.argv) < 2 and not os.path.isfile('x-train.npy'):
     print("Usage: main.py followed by a list of soundfiles")
@@ -18,10 +20,11 @@ if len(sys.argv) < 2 and not os.path.isfile('x-train.npy'):
 size = round(22050 * 0.5)
 compression_rate = 1.0
 comp_size = round(size*compression_rate)
+
 input_layer = Input(shape=(size,))
     
 encoded = Dense(comp_size, activation='relu')(input_layer)
- 
+
 decoded = Dense(size, activation='sigmoid')(encoded)
 
 autoencoder = Model(input_layer, decoded)
@@ -37,6 +40,7 @@ if os.path.isfile('model_weights.h5'):
     autoencoder.load_weights('model_weights.h5')
     print('Succesfully loaded weights')
 
+print_summary(autoencoder)
 autoencoder.compile(optimizer='adam', loss='mse') 
 
 #Read the files given as arguments
@@ -44,7 +48,7 @@ wavs = []
 names = []
 i = 1
 for arg in sys.argv[1:]:
-    print("Reading file " + str(i+1) + "/" + str(len(sys.argv[1:])) + "              ", end='\r')
+    print("Reading file " + str(i) + "/" + str(len(sys.argv[1:])) + "              ", end='\r')
     wavs.append(preprocessor.wavToNumpy(arg, size))
     names.append(arg)
     i += 1
