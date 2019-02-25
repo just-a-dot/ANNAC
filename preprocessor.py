@@ -14,7 +14,7 @@ def fileToNpArray(f, size):
         sample_base = []
         for sample in frames[n_sample:(n_sample+size)]:
             i = int.from_bytes(sample, byteorder='little', signed=True)
-            i = i / 32767 #Turn the amplitude into a float between -1.0 and 1.0
+            i = i / 32767 # turns the amplitude into a float btw -1.0 and 1.0
             i = i + 1
             i = i / 2
             # This transformation is reversed in the postprocessor
@@ -28,9 +28,11 @@ def transcodeFile(filename):
     if(os.path.isfile(outname)):
         return outname
     with open(os.devnull, 'w') as devnull:
-        subprocess.run(['sox', filename, outname, 'channels', '1'])#, stdout=devnull, stderr=devnull)
+        #, stdout=devnull, stderr=devnull)
+        subprocess.run(['sox', filename, outname, 'channels', '1'])
     return outname
 
+# Converts the first size samples of a wave file to a numpy array 
 def wavToNumpy(filename, size):
     outname = transcodeFile(filename)
     with wave.open(outname) as f:
