@@ -7,8 +7,10 @@ import numpy as np
 
 from keras.models import Model, load_model
 from keras.layers import Input, Dense
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.utils import print_summary
+
+from random import shuffle
 
 if len(sys.argv) < 2 and not os.path.isfile('x-train.npy'):
     print("Usage: main.py followed by a list of soundfiles")
@@ -18,14 +20,17 @@ if len(sys.argv) < 2 and not os.path.isfile('x-train.npy'):
 sample_rate = 22050
 # Size of the samples
 # (decides network size, ram usage increases exponentially with this)
-size = round(sample_rate * 0.5) 
+size = round(sample_rate * 0.1) 
 
-compression_rate = 1.0
+compression_rate = 0.1
 comp_size = round(size*compression_rate)
 
 # NETWORK ARCHITECTURE
 input_layer = Input(shape=(size,))
-encoded = Dense(comp_size, activation='relu')(input_layer)
+    
+encoded = Dense(comp_size*2, activation='sigmoid')(input_layer)
+encoded = Dense(comp_size, activation='sigmoid')(encoded)
+ 
 decoded = Dense(size, activation='sigmoid')(encoded)
 
 autoencoder = Model(input_layer, decoded)
@@ -69,10 +74,12 @@ else:
             if len(sample) != size:
                 continue
             wavs_trans.append(sample)
+    shuffle(wavs_trans)
     # The training set is composed of 90% of samples,
     # the test set of the remaining 10%
     x_train = np.asarray(wavs_trans[:(round(0.9*len(wavs_trans)))])
     x_test = np.asarray(wavs_trans[(round(0.9*len(wavs_trans))):])
+    wavs_trans = []
     print('Saving training data')
     with open('x_train.npy', 'wb') as f:
         np.save(f, x_train)
@@ -82,21 +89,12 @@ else:
 
 # Save the weights after each epoch if they improved
 filepath = "weights-improvement-{epoch:02d}-{val_loss:.2f}.hdf5"
-checkpoint = ModelCheckpoint(
-    filepath, 
-    monitor='val_loss', 
-    verbose=1, 
-    save_best_only=True, 
-    mode='min')
-callback_list = [checkpoint]
+checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+stopping = EarlyStopping(patience=10)
+callback_list = [checkpoint, stopping]
+#Training happens here
 
-# TRAINING
-autoencoder.fit(
-    x_train, 
-    x_train, 
-    epochs=1, 
-    validation_data=(x_test, x_test), 
-    callbacks=callback_list)
+autoencoder.fit(x_train, x_train, epochs=3000, batch_size=50, validation_data=(x_test, x_test), callbacks=callback_list)
 autoencoder.save_weights('model_weights.h5')
 print('Saving trained model')
 
