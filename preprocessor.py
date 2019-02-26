@@ -7,7 +7,7 @@ def fileToNpArray(f, size):
     res = []
     frames = []
     frame = f.readframes(1)
-    while frame != b'':
+    while frame != b'': # b'' = empty byte string
         frames.append(frame)
         frame = f.readframes(1)
     for n_sample in range(0, len(frames), size):
@@ -20,8 +20,10 @@ def fileToNpArray(f, size):
             # This transformation is reversed in the postprocessor
             sample_base.append(i)
         res.append(sample_base)
-    return np.array(res)
-
+    res = np.array(res)
+    for sample in res:
+        np.fft.fft(sample) # fourier transform
+    return res
 def transcodeFile(filename):
     fname, fextension = os.path.splitext(filename)
     outname = fname + '-conv.wav'

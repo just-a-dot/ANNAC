@@ -28,7 +28,7 @@ comp_size = round(size*compression_rate)
 # NETWORK ARCHITECTURE
 input_layer = Input(shape=(size,))
     
-encoded = Dense(comp_size*2, activation='sigmoid')(input_layer)
+encoded = Dense(comp_size*2, activation='sigmoid')(input_layer) #relu
 encoded = Dense(comp_size, activation='sigmoid')(encoded)
  
 decoded = Dense(size, activation='sigmoid')(encoded)
@@ -52,7 +52,10 @@ wavs = []   # list of wave files CONVERTED TO NUMPY ARRAYS
 names = []  # list of filenames
 i = 1
 for arg in sys.argv[1:]:
-    print("Reading file " + str(i) + "/" + str(len(sys.argv[1:])) + "              ", end='\r')
+    print("Reading file " 
+          + str(i) + "/" 
+          + str(len(sys.argv[1:])) 
+          + "              ", end='\r')
     wavs.append(preprocessor.wavToNumpy(arg, size))
     names.append(arg)
     i += 1
@@ -89,12 +92,23 @@ else:
 
 # Save the weights after each epoch if they improved
 filepath = "weights-improvement-{epoch:02d}-{val_loss:.2f}.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+checkpoint = ModelCheckpoint(
+    filepath, 
+    monitor='val_loss', 
+    verbose=1, 
+    save_best_only=True, 
+    mode='min')
 stopping = EarlyStopping(patience=10)
 callback_list = [checkpoint, stopping]
 #Training happens here
 
-autoencoder.fit(x_train, x_train, epochs=3000, batch_size=50, validation_data=(x_test, x_test), callbacks=callback_list)
+autoencoder.fit(
+    x_train, 
+    x_train, 
+    epochs=3000, 
+    batch_size=50, 
+    validation_data=(x_test, x_test), 
+    callbacks=callback_list)
 autoencoder.save_weights('model_weights.h5')
 print('Saving trained model')
 
