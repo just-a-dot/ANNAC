@@ -103,4 +103,10 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Project sepcific
 /dataset
+*.h5
+*.hdf5
+*.au
+*.wav
+*.npy
