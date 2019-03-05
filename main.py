@@ -116,7 +116,7 @@ autoencoder.save('model.h5')
 
 #Reassemble wavs
 for i in range(0, len(wavs)):
-    print("Processing song " + str(i) + " of " + str(len(wavs)))
+    print("Processing song " + str(i+1) + " of " + str(len(wavs)))
     print(wavs[i].shape)
     encoded_wav = []
     for chunk_i in range(0, song_length):
