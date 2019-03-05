@@ -11,6 +11,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.utils import print_summary
 
 from random import shuffle
+from multiprocessing import Pool
 
 if len(sys.argv) < 2 and not os.path.isfile('x-train.npy'):
     print("Usage: main.py followed by a list of soundfiles")
@@ -52,13 +53,13 @@ wavs = []   # list of wave files CONVERTED TO NUMPY ARRAYS
 names = []  # list of filenames
 i = 1
 for arg in sys.argv[1:]:
-    print("Reading file " 
-          + str(i) + "/" 
-          + str(len(sys.argv[1:])) 
-          + "              ", end='\r')
-    wavs.append(preprocessor.wavToNumpy(arg, size))
     names.append(arg)
-    i += 1
+def preprocess_par(song):
+    return preprocessor.wavToNumpy(song, size)
+with Pool() as p:
+    print("Loading files. THIS MAY TAKE A VERY LONG TIME")
+    wavs = p.map(preprocess_par, sys.argv[1:])
+    print(len(wavs))
 
 # Attempt to load previously saved training data
 if os.path.isfile('x_train.npy') and os.path.isfile('x_test.npy'):
@@ -71,6 +72,7 @@ if os.path.isfile('x_train.npy') and os.path.isfile('x_test.npy'):
         x_test = np.load(f)
         print(x_test.shape)
 else:
+    print("Prepating training data")
     wavs_trans = []
     for song in wavs:
         for sample in song:
