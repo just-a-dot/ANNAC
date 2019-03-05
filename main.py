@@ -1,19 +1,18 @@
 import preprocessor
 import postprocessor
+
 import sys
 import os
-
 import numpy as np
-
-from keras.models import Model, Sequential
-from keras.layers import Input, Dense, Conv1D, Flatten, TimeDistributed, MaxPooling1D, Reshape
-from keras.callbacks import ModelCheckpoint, EarlyStopping
-from keras.optimizers import Adam
-
 from random import shuffle
 from math import ceil
-
 from multiprocessing import Pool
+
+from keras.models import Model, Sequential
+from keras.layers import Input, LSTM, RepeatVector
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.optimizers import Adam
+from keras.utils import print_summary
 
 if len(sys.argv) < 2:
     print("Usage: main.py followed by a list of soundfiles")
@@ -82,30 +81,17 @@ else:
     with open('x_test.npy', 'wb') as f:
         np.save(f, x_test)
 
-
 inputs = Input(shape=(chunk_size, size))
-encoded = Conv1D(100, 10, input_shape=(chunk_size, size), activation='relu')(inputs)
-encoded = MaxPooling1D(5)(encoded)
-encoded = Conv1D(100, 10, activation='relu')(encoded)
-encoded = MaxPooling1D(5)(encoded)
-encoded = Flatten()(encoded)
-encoded = Dense(compressed_size*2, activation='relu')(encoded)
-encoded = Dense(compressed_size, activation='relu')(encoded)
+encoded = LSTM(compressed_size)(inputs)
 
-decoded = Reshape((compressed_size, size))(encoded)
-decoded = Conv1D(100, 10, activation ='relu')(decoded)
-decoded = MaxPooling1D(5)(decoded)
-decoded = Conv1D(100, 10, activation ='relu')(decoded)
-decoded = MaxPooling1D(5)(decoded)
-decoded = Flatten()(decoded)
-decoded = Dense(chunk_size, activation='sigmoid')(decoded)
-decoded = Reshape((chunk_size, size))(decoded)
+decoded = RepeatVector(chunk_size)(encoded)
+decoded = LSTM(size, return_sequences=True)(decoded)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
 
 autoencoder.compile(optimizer=Adam(lr=0.001), loss='mse')
-
+print_summary(autoencoder)
 
 # Save the weights after each epoch if they improved
 filepath = "weights-improvement-{epoch:02d}-{val_loss:.2f}.hdf5"
