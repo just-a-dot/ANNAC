@@ -14,7 +14,6 @@ def numpyToWav(data, outname):
           'NONE', 
           'not compressed'))
         for sample in data:
-            np.fft.ifft(sample)
             for frame in sample.flatten().tolist():
                 # Reverse the transformation from the preprocessor
                 frame = frame * 2
@@ -22,11 +21,3 @@ def numpyToWav(data, outname):
                 frame = round(frame * 32767) 
                 f.writeframes((
                   frame.to_bytes(2, byteorder='little', signed=True)))
-
-'''
-File "main.py", line 105, in <module>
-    postprocessor.numpyToWav(base, names[i] + '-out.wav')
-  File "/data/postprocessor.py", line 14, in numpyToWav
-    frame = round(frame * 32767) # Reverse the transformation from the preprocessor
-TypeError: type numpy.ndarray doesn't define __round__ method
-'''
