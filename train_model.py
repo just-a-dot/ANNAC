@@ -4,6 +4,7 @@ from multiprocessing import Pool
 from functools import partial
 import numpy as np
 import os
+import signal
 import glob
 
 from keras.utils import print_summary
@@ -11,11 +12,21 @@ from keras.callbacks import ModelCheckpoint
 
 import preprocessor
 
+autoencoder = None
+encoder = None
+decoder = None
+improvement_dir = None
+
 def train(module_name, npy_file, training_data_path, output_npy, model_output):
+    global autoencoder, encoder, decoder, improvement_dir
+    
     model_module = __import__(module_name, fromlist=[''])
     model = model_module.AEModel()
     
     autoencoder = model.get_autoencoder()
+    encoder = model.get_encoder()
+    decoder = model.get_decoder()
+
     print_summary(autoencoder)
     autoencoder.compile(optimizer=model.get_optimizer(), loss=model.get_loss_function())
 
@@ -61,6 +72,8 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
 
     training_data, test_data = prepare_npy_data(audio_data)
 
+    signal.signal(signal.SIGINT, signal_handler)
+
     autoencoder.fit(
         training_data, 
         training_data, 
@@ -70,20 +83,7 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
         validation_data=(test_data, test_data), 
         callbacks=callback_list)
     
-    weight_files = get_all_files_in_directory(improvement_dir, '.hdf5')
-    latest_improvement = max(weight_files, key=os.path.getctime)
-
-    #load best weights and save model
-    autoencoder.load_weights(latest_improvement)
-    try:
-        os.makedirs(model_output)
-    except FileExistsError:
-        # directory already exists
-        pass
-    
-    autoencoder.save(model_output + '/autoencoder.hdf5')
-    model.get_encoder().save(model_output + '/encoder.hdf5')
-    model.get_decoder().save(model_output + '/decoder.hdf5')
+    save_all_models()
     
 
 def get_all_files_in_directory(directory, extension=''):
@@ -113,8 +113,32 @@ def print_usage_and_exit():
         [-t/--training-data=] <folder-with-audio-data (extension:au/wav)> [-o/--output-npy=] <where-to-output-npy-file>')
     sys.exit(1)
 
+def save_all_models():
+    global autoencoder, decoder, encoder, improvement_dir, model_output
 
-if __name__ == "__main__":
+    print('Saving all models')
+
+    weight_files = get_all_files_in_directory(improvement_dir, '.hdf5')
+    latest_improvement = max(weight_files, key=os.path.getctime)
+
+    #load best weights and save model
+    autoencoder.load_weights(latest_improvement)
+    try:
+        os.makedirs(model_output)
+    except FileExistsError:
+        # directory already exists
+        pass
+    
+    autoencoder.save(model_output + '/autoencoder.hdf5')
+    encoder.save(model_output + '/encoder.hdf5')
+    decoder.save(model_output + '/decoder.hdf5')
+
+def signal_handler(sig, frame):
+    save_all_models()
+    sys.exit(0)
+
+
+if __name__ == "__main__":   
     if len(sys.argv) < 4:
         print_usage_and_exit()
 
