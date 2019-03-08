@@ -9,7 +9,7 @@ from math import ceil
 from multiprocessing import Pool
 
 from keras.models import Model, Sequential
-from keras.layers import Input, LSTM, RepeatVector
+from keras.layers import Input, LSTM, RepeatVector, Dense, TimeDistributed
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.optimizers import Adam
 from keras.utils import print_summary
@@ -22,10 +22,11 @@ if len(sys.argv) < 2:
 #size = round(22050 * 0.5)
 size = 1 
 #chunk_size = round(22050*0.1)
-chunk_size = 500
-compression_rate = 0.3
+SAMPLE_RATE = 22050
+compression_rate = 0.1
+chunk_size = 500 # round(SAMPLE_RATE * compression_rate) 
 compressed_size = round(compression_rate * chunk_size)
-song_length = 22050*29
+song_length = SAMPLE_RATE*29
 
 
 #Read the files given as arguments
@@ -86,6 +87,7 @@ encoded = LSTM(compressed_size)(inputs)
 
 decoded = RepeatVector(chunk_size)(encoded)
 decoded = LSTM(size, return_sequences=True)(decoded)
+decoded = TimeDistributed(Dense(1, activation='sigmoid'))(decoded)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
@@ -101,7 +103,7 @@ checkpoint = ModelCheckpoint(
     verbose=1,
     save_best_only=True,
     mode='min')
-stopping = EarlyStopping(patience=5)
+stopping = EarlyStopping(patience=15)
 callback_list = [checkpoint, stopping]
 
 
