@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from keras.models import Model, load_model
+from keras.models import Model, load_model,Sequential
 from keras.layers import Input, Dense
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.utils import print_summary
@@ -13,7 +13,7 @@ from keras.utils import print_summary
 from random import shuffle
 
 if len(sys.argv) < 2 and not os.path.isfile('x-train.npy'):
-    print("Usage: main.py followed by a list of soundfiles")
+    print("Usage: main.py followed by a list of soundfiles" )
     exit()
 
 # BASIC PARAMETERS
@@ -26,26 +26,51 @@ compression_rate = 0.1
 comp_size = round(size*compression_rate)
 
 # NETWORK ARCHITECTURE
-input_layer = Input(shape=(size,))
-    
-encoded = Dense(comp_size*2, activation='sigmoid')(input_layer) #relu
-encoded = Dense(comp_size, activation='sigmoid')(encoded)
- 
-decoded = Dense(size, activation='sigmoid')(encoded)
+input_dim = size
+encoding_dim = comp_size
 
-autoencoder = Model(input_layer, decoded)
-encoder = Model(input_layer, encoded)
+compression_factor = float(input_dim) / encoding_dim
+print("Compression factor: %s" % compression_factor)
+
+autoencoder = Sequential()
+autoencoder.add(Dense(encoding_dim, input_shape=(input_dim,), activation='relu'))
+autoencoder.add(Dense(input_dim, activation='sigmoid'))
+
+autoencoder.summary()
+
+
+
+ 
+
+input_layer = Input(shape=(size,))
 encoded_input = Input(shape=(comp_size,))
-decoder_layer = autoencoder.layers[-1]
+
+encoder_layer = autoencoder.layers[0]
+encoder = Model(input_layer, encoder_layer(input_layer))
+
+decoder_layer = autoencoder.layers[1]
 decoder = Model(encoded_input, decoder_layer(encoded_input))
+
+
 
 if os.path.isfile('model_weights.h5'):
     print('Saved weights model_weights.h5 found! Attempting to load')
     autoencoder.load_weights('model_weights.h5')
     print('Succesfully loaded weights')
 
-print_summary(autoencoder)
-autoencoder.compile(optimizer='adam', loss='mse') 
+
+#print_summary(autoencoder)
+#model.compile(loss='mean_squared_error', optimizer=sgd)
+from keras import optimizers
+#adam = optimizers.Adam(lr=0.1) # fungerade riktigt dåligt, fastnade i typ 2,4
+#adam = optimizers.Adam(lr=0.01) # verkar fastna på 0,96
+#adam = optimizers.Adam(lr=0.005) # verkar fastna på 0,96
+#adam = optimizers.Adam(lr=0.001) # verkar fastna på : 0.0078
+#adam = optimizers.Adam(lr=0.00001)  # tar väldigt lång tid men fastnar på 0.0023
+#adam = optimizers.Adam(lr=0.00001)  # tar väldigt lång tid men fastnar på 0.0016 när jag tog fler filer
+#adam = optimizers.Adam(lr=0.000005)  # 0.0013
+adam = optimizers.Adam(lr=0.000001)  # 0.0015
+autoencoder.compile(optimizer=adam, loss='mse') 
 
 # PREPROCESSING
 wavs = []   # list of wave files CONVERTED TO NUMPY ARRAYS
@@ -98,15 +123,18 @@ checkpoint = ModelCheckpoint(
     verbose=1, 
     save_best_only=True, 
     mode='min')
-stopping = EarlyStopping(patience=10)
+#stopping = EarlyStopping(patience=100)
+#stopping = EarlyStopping(patience=10,min_delta=0.00001)
+stopping = EarlyStopping(patience=100)
 callback_list = [checkpoint, stopping]
 #Training happens here
 
 autoencoder.fit(
     x_train, 
     x_train, 
-    epochs=3000, 
-    batch_size=50, 
+    #epochs=3000, 
+    epochs=1000, 
+    batch_size=75, 
     validation_data=(x_test, x_test), 
     callbacks=callback_list)
 autoencoder.save_weights('model_weights.h5')
@@ -117,7 +145,8 @@ if len(wavs) == 0:
     print('No files to process given, terminating')
     exit(0)
 # Reassemble wavs
-for i in range(0, len(wavs)):
+#for i in range(0, len(wavs)):
+for i in range(0, 10):
     base = []
     print("Processing song " + str(i+1) + " of " + str(len(wavs)))
     for sample in wavs[i]:
