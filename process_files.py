@@ -1,7 +1,6 @@
 import sys
 import getopt
 import importlib
-import glob
 from multiprocessing import Pool
 from functools import partial
 import numpy as np
@@ -9,19 +8,7 @@ import numpy as np
 from keras.models import load_model
 import preprocessor
 import postprocessor
-
-def get_all_files_in_directory(directory, extension=''):
-    '''
-    A function used to recursivly extract all files with the given extension from a directory.
-
-    :param directory: The directory we want to extract the files from.
-    :param extension: The extension we want to use. All files are retrieved on default.
-
-    :returns: The files in the directory with the given extension.
-    '''
-    if directory[-1] == '/':
-        directory = directory[:-1]
-    return glob.glob(directory + '/**/*' + extension, recursive=True)
+import annac_helper
 
 
 def process(model_folder, audio_folder, audio_file):
@@ -46,7 +33,7 @@ def process(model_folder, audio_folder, audio_file):
     if audio_file is not None:
         audio_files.append(audio_file)
     else:
-        audio_files = get_all_files_in_directory(audio_folder, '.au')
+        audio_files = annac_helper.get_all_files_in_directory(audio_folder, '.au')
 
     audio_data = Pool().map(partial(preprocessor.wav_to_numpy, input_size=input_size), audio_files)
     print('Finished loading audio files.')
@@ -61,7 +48,6 @@ def process(model_folder, audio_folder, audio_file):
             song_data.append(decoded_chunk)
         postprocessor.numpyToWav(song_data, filename[:-3] + '-out.wav')
     
-
 def print_usage_and_exit():
     '''
     A function to print the usage of the script and then exit.
@@ -82,7 +68,7 @@ if __name__ == "__main__":
             print_usage_and_exit()
 
 
-        model_file = None
+        model_folder = None
         audio_folder = None
         audio_file = None
 
@@ -91,17 +77,17 @@ if __name__ == "__main__":
             if opt in ('-d', '--directory'):
                 audio_folder = arg
             elif opt in ('-m', '--model-folder'):
-                model_file = arg
+                model_folder = arg
             elif opt in ('-f', '--file'):
                 audio_file = arg
             else:
                 print_usage_and_exit()
 
-        if model_file is None:
+        if model_folder is None:
             print('please specify the model folder')
             print_usage_and_exit()
         elif audio_file is not None and audio_folder is not None:
             print('Use either --file or --directory, not both!')
             print_usage_and_exit()
         
-        process(model_file, audio_folder, audio_file)
+        process(model_folder, audio_folder, audio_file)
