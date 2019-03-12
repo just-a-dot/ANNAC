@@ -177,7 +177,7 @@ def print_usage_and_exit():
     '''
     A function to print the usage of the script and then exit.
     '''
-    print('Usage: python annac.py [-m/--module-name=] <module-containing-the-model> [-s/--save-model=] <where-to-save-the-model (dir)>\n\\
+    print('Usage: python annac.py [-m/--module-name=] <module-containing-the-model> [-s/--save-model=] <where-to-save-the-model (dir)>\n\
         [-n/--npy-file=] <training-data.npy> OR \n\
         [-t/--training-data=] <folder-with-audio-data (extension:au/wav)> [-o/--output-npy=] <where-to-output-npy-file>')
     sys.exit(1)
