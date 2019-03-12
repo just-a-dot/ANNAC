@@ -111,6 +111,7 @@ def get_training_data(npy_file, training_data_path, output_npy):
         print('\n\n\nCreating npy from audio files.')
         
         audio_files = get_all_files_in_directory(training_data_path, '.au')
+        # ignore the last 10% of the audio files for later (proper) validation
         audio_files = list(filter(lambda x: x < 90, audio_files))
 
         # convert files to wav and get the numpy representation in parallel
