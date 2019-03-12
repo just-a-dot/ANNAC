@@ -89,7 +89,6 @@ encoded = MaxPooling1D(2)(encoded)
 encoded = Conv1D(16, 3, activation='relu')(encoded)
 encoded = BatchNormalization()(encoded)
 encoded = MaxPooling1D(2)(encoded)
-encoded = BatchNormalization()(encoded)
 encoded = Flatten()(encoded)
 encoded = Dense(compressed_size, activation='relu')(encoded)
 
