@@ -32,8 +32,7 @@ def print_usage_and_exit():
     A function to print the usage of the script and then exit.
     '''
     print('Usage: python process_files [-m/--model-folder=] <keras-model-folder> \n\
-        [-d/--directory=] <folder-with-audiofiles> OR \n \
-        [-f/--file=] <single-audiofile>')
+        [-a/--audio-folder] <folder-with-audiofiles>
     sys.exit(1)
 
 if __name__ == "__main__":
@@ -52,9 +51,9 @@ if __name__ == "__main__":
 
         # extract arguments
         for opt, arg in opts:
-            if opt in ('-d', '--data'):
+            if opt in ('-a', '--audio-folder'):
                 audio_folder = arg
-            elif opt in ('-a', '--audio-folder'):
+            elif opt in ('-m', '--model-folder'):
                 model_folder = arg
                 print_usage_and_exit()
 
