@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 from keras.models import Model, Sequential
-from keras.layers import Input, Dense, Conv1D, Flatten, TimeDistributed, MaxPooling1D, Reshape
+from keras.layers import Input, Dense, Conv1D, Flatten, TimeDistributed, MaxPooling1D, Reshape, BatchNormalization, UpSampling1D
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.optimizers import Adam
 
@@ -23,8 +23,8 @@ if len(sys.argv) < 2:
 #size = round(22050 * 0.5)
 size = 1 
 #chunk_size = round(22050*0.1)
-chunk_size = 500
-compression_rate = 0.3
+chunk_size = 2000
+compression_rate = 0.1
 compressed_size = round(compression_rate * chunk_size)
 song_length = 22050*29
 
@@ -84,27 +84,29 @@ else:
 
 
 inputs = Input(shape=(chunk_size, size))
-encoded = Conv1D(100, 10, input_shape=(chunk_size, size), activation='relu')(inputs)
-encoded = MaxPooling1D(5)(encoded)
-encoded = Conv1D(100, 10, activation='relu')(encoded)
-encoded = MaxPooling1D(5)(encoded)
+encoded = Conv1D(32, 3, activation='relu')(inputs)
+encoded = MaxPooling1D(2)(encoded)
+encoded = Conv1D(16, 3, activation='relu')(encoded)
+encoded = BatchNormalization()(encoded)
+encoded = MaxPooling1D(2)(encoded)
+encoded = BatchNormalization()(encoded)
 encoded = Flatten()(encoded)
-encoded = Dense(compressed_size*2, activation='relu')(encoded)
 encoded = Dense(compressed_size, activation='relu')(encoded)
 
 decoded = Reshape((compressed_size, size))(encoded)
-decoded = Conv1D(100, 10, activation ='relu')(decoded)
-decoded = MaxPooling1D(5)(decoded)
-decoded = Conv1D(100, 10, activation ='relu')(decoded)
-decoded = MaxPooling1D(5)(decoded)
+decoded = Conv1D(16,3, activation='relu')(decoded)
+decoded = UpSampling1D(2)(decoded)
+decoded = Conv1D(32,11, activation='relu')(decoded)
+decoded = UpSampling1D(2)(decoded)
 decoded = Flatten()(decoded)
 decoded = Dense(chunk_size, activation='sigmoid')(decoded)
+print(decoded.shape)
 decoded = Reshape((chunk_size, size))(decoded)
 
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
 
-autoencoder.compile(optimizer=Adam(lr=0.001), loss='mse')
+autoencoder.compile(optimizer=Adam(lr=0.0001), loss='mse')
 
 
 # Save the weights after each epoch if they improved
@@ -115,7 +117,7 @@ checkpoint = ModelCheckpoint(
     verbose=1,
     save_best_only=True,
     mode='min')
-stopping = EarlyStopping(patience=5)
+stopping = EarlyStopping(patience=10)
 callback_list = [checkpoint, stopping]
 
 
