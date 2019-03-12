@@ -83,6 +83,14 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
     
     save_all_models()
     
+
+def get_song_number_for_filename(filename):
+    split_name = filename.split('.')
+    if len(split_name) == 3:
+        return int(split_name[1])
+    else:
+        return -1
+
 def get_training_data(npy_file, training_data_path, output_npy):
     '''
     A function to get the training data from either a npy file or a folder of files.
@@ -103,6 +111,7 @@ def get_training_data(npy_file, training_data_path, output_npy):
         print('\n\n\nCreating npy from audio files.')
         
         audio_files = get_all_files_in_directory(training_data_path, '.au')
+        audio_files = list(filter(lambda x: x < 90, audio_files))
 
         # convert files to wav and get the numpy representation in parallel
         audio_data = Pool().map(partial(preprocessor.wav_to_numpy, sample_size=sample_size), audio_files)
