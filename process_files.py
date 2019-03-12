@@ -11,17 +11,35 @@ import preprocessor
 import postprocessor
 
 def get_all_files_in_directory(directory, extension=''):
+    '''
+    A function used to recursivly extract all files with the given extension from a directory.
+
+    :param directory: The directory we want to extract the files from.
+    :param extension: The extension we want to use. All files are retrieved on default.
+
+    :returns: The files in the directory with the given extension.
+    '''
     if directory[-1] == '/':
         directory = directory[:-1]
     return glob.glob(directory + '/**/*' + extension, recursive=True)
 
 
 def process(model_folder, audio_folder, audio_file):
+    '''
+    A function to to process one or more audio files.
+    The file will be compressed and then decompressed. The output will be saved.
+
+    :param model_folder: The folder where the trained models reside.
+    :param audio_folder: A folder containing the audio files to be processed.
+    :param audio_file: A single audio file to be processed.
+    '''
+
     encoder = load_model(model_folder + '/encoder.hdf5')
     print('Finished loading encoder')
     decoder = load_model(model_folder + '/decoder.hdf5')
     print('Finished loading decoder')
 
+    # get the input size of the model in order to preprocess the audio files properly.
     _, sample_size = encoder.layers[0].output_shape
 
     audio_files = []
@@ -33,6 +51,7 @@ def process(model_folder, audio_folder, audio_file):
     audio_data = Pool().map(partial(preprocessor.wav_to_numpy, sample_size=sample_size), audio_files)
     print('Finished loading audio files.')
     
+    # process the songs.
     for wav_data, filename in zip(audio_data, audio_files):
         song_data = []
         print('Processing song ' + filename)
@@ -44,6 +63,9 @@ def process(model_folder, audio_folder, audio_file):
     
 
 def print_usage_and_exit():
+    '''
+    A function to print the usage of the script and then exit.
+    '''
     print('Usage: python process_files [-m/--model-folder=] <keras-model-folder> \n\
         [-d/--directory=] <folder-with-audiofiles> OR \n \
         [-f/--file=] <single-audiofile>')
@@ -64,6 +86,7 @@ if __name__ == "__main__":
         audio_folder = None
         audio_file = None
 
+        # extract arguments
         for opt, arg in opts:
             if opt in ('-d', '--directory'):
                 audio_folder = arg
