@@ -56,6 +56,7 @@ if __name__ == "__main__":
                 audio_folder = arg
             elif opt in ('-m', '--model-folder'):
                 model_folder = arg
+            else:
                 print_usage_and_exit()
 
         if model_folder is None:
