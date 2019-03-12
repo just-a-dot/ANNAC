@@ -29,3 +29,7 @@ class ModelTemplate(ABC):
     @abstractmethod
     def get_decoder(self):
         pass
+
+    @abstractmethod
+    def get_input_size(self):
+        pass

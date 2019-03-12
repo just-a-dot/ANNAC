@@ -7,7 +7,7 @@ from keras.layers import Input, Dense
 class AEModel(ModelTemplate):
     def __init__(self):
         self.sample_rate = 22050
-        self.sample_size = round(self.sample_rate*0.1)
+        self.input_size = round(self.sample_rate*0.1)
 
         self.epochs = 100
         self.batch_size = 50
@@ -18,16 +18,16 @@ class AEModel(ModelTemplate):
         self.loss_function = 'mse'
         
         compression_rate = 0.1
-        comp_size = round(compression_rate * self.sample_size)
+        comp_size = round(compression_rate * self.input_size)
 
-        input_layer = Input(shape=(self.sample_size,))
+        input_layer = Input(shape=(self.input_size,))
         
         encoded = Dense(comp_size*5-120, activation='sigmoid')(input_layer)
         encoded = Dense(comp_size*2, activation='sigmoid')(encoded)
         encoded = Dense(comp_size, activation='sigmoid')(encoded)  
-        decoded = Dense(self.sample_size, activation='sigmoid')(encoded)
+        decoded = Dense(self.input_size, activation='sigmoid')(encoded)
         
-        decoded = Dense(self.sample_size, activation='sigmoid')(encoded)
+        decoded = Dense(self.input_size, activation='sigmoid')(encoded)
 
         self.autoencoder = Model(input_layer, decoded)
         self.encoder = Model(input_layer, encoded)
@@ -40,8 +40,8 @@ class AEModel(ModelTemplate):
     def get_epochs(self):
         return self.epochs
         
-    def get_sample_size(self):
-        return self.sample_size
+    def get_input_size(self):
+        return self.input_size
 
     def get_batch_size(self):
         return self.batch_size
