@@ -1,5 +1,8 @@
 import sys
 import getopt
+from multiprocessing import Pool
+from functools import partial
+import numpy as np
 
 from keras.models import load_model
 
@@ -16,13 +19,16 @@ def validate(model_folder, audio_folder):
     :param audio_folder: Where the audio files reside
     '''
 
+    print('Loading autoencoder...')
     autoencoder = load_model(model_folder + '/autoencoder.hdf5')
 
+    print('Loading audio files...')
     audio_files = annac_helper.get_all_files_in_directory(audio_folder, extension='.au')
-    audio_files = list(filter(lambda x: annac_helper.get_song_number_for_filename(x) < 90, audio_files))
-    
+    audio_files = list(filter(lambda x: annac_helper.get_song_number_for_filename(x) > 89, audio_files))
+
     _, input_size = autoencoder.layers[0].output_shape
     audio_data = Pool().map(partial(preprocessor.wav_to_numpy, input_size=input_size), audio_files)
+    audio_data = np.array([j for i in audio_data for j in i])
     print('Finished loading audio files.')
 
     return autoencoder.evaluate(x=audio_data, y=audio_data, batch_size=75, )
