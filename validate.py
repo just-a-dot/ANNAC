@@ -18,7 +18,7 @@ def validate(model_folder, audio_folder):
 
     autoencoder = load_model(model_folder + '/autoencoder.hdf5')
 
-    audio_files = get_all_files_in_directory(audio_folder, extension='.au')
+    audio_files = annac_helper.get_all_files_in_directory(audio_folder, extension='.au')
     audio_files = list(filter(lambda x: annac_helper.get_song_number_for_filename(x) < 90, audio_files))
     
     _, input_size = autoencoder.layers[0].output_shape
