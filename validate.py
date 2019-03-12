@@ -32,7 +32,7 @@ def print_usage_and_exit():
     A function to print the usage of the script and then exit.
     '''
     print('Usage: python process_files [-m/--model-folder=] <keras-model-folder> \n\
-        [-a/--audio-folder] <folder-with-audiofiles>
+        [-a/--audio-folder] <folder-with-audiofiles>')
     sys.exit(1)
 
 if __name__ == "__main__":
