@@ -3,13 +3,13 @@ import subprocess
 import numpy as np
 import os
 
-def file_to_np_array(audio_file, sample_size):
+def file_to_np_array(audio_file, input_size):
     '''
     A function to turn a wave file into a numpy array.
-    If the last sample of the file is not as large as sample_size, it is ignored.
+    If the last sample of the file is not as large as input_size, it is ignored.
 
     :param audio_file: The path to the file we want to transform.
-    :param sample_size: How many frames form a sample.
+    :param input_size: How many frames form a sample.
 
     :returns: The wave file as numpy array (in regard to the sample size)
     '''
@@ -26,7 +26,7 @@ def file_to_np_array(audio_file, sample_size):
 
         # we've reached sample size, so turn the previous frames into one sample
         # and clear our the frames array.
-        if len(frames) % sample_size == 0:
+        if len(frames) % input_size == 0:
             samples = []
             for sample in frames:
                 # transform the wave file into something the model can handle better
@@ -60,15 +60,15 @@ def convert_file_to_wav(filename):
 
     return wav_filename
 
-def wav_to_numpy(filename, sample_size):
+def wav_to_numpy(filename, input_size):
     '''
     A function to convert a file into wav and then into a numpy array.
 
     :param filename: The file we want to get the data for
-    :param sample_size: How many frames should form one sample. Correlates to the input size of the model.
+    :param input_size: How many frames should form one sample. Correlates to the input size of the model.
 
     :returns: A numpy array containing the data.
     '''
     wav_filename = convert_file_to_wav(filename)
     with wave.open(wav_filename) as wav_file:
-        return file_to_np_array(wav_file, sample_size)
+        return file_to_np_array(wav_file, input_size)

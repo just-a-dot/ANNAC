@@ -15,8 +15,8 @@ def numpyToWav(data, outname):
         samplewidth = 2
         framerate = 22050
         f.setparams((channels, samplewidth, framerate, 0, 'NONE', 'not compressed'))
-        for sample in data:
-            for frame in sample.flatten().tolist():
+        for chunk in data:
+            for frame in chunk.flatten().tolist():
                 # Reverse the transformation from the preprocessor
                 frame = frame * 2
                 frame = frame - 1

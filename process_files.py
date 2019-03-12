@@ -40,7 +40,7 @@ def process(model_folder, audio_folder, audio_file):
     print('Finished loading decoder')
 
     # get the input size of the model in order to preprocess the audio files properly.
-    _, sample_size = encoder.layers[0].output_shape
+    _, input_size = encoder.layers[0].output_shape
 
     audio_files = []
     if audio_file is not None:
@@ -48,17 +48,17 @@ def process(model_folder, audio_folder, audio_file):
     else:
         audio_files = get_all_files_in_directory(audio_folder, '.au')
 
-    audio_data = Pool().map(partial(preprocessor.wav_to_numpy, sample_size=sample_size), audio_files)
+    audio_data = Pool().map(partial(preprocessor.wav_to_numpy, input_size=input_size), audio_files)
     print('Finished loading audio files.')
     
     # process the songs.
     for wav_data, filename in zip(audio_data, audio_files):
         song_data = []
         print('Processing song ' + filename)
-        for sample in wav_data:
-            encoded_sample = encoder.predict(np.expand_dims(sample, axis=0), batch_size=1)
-            decoded_sample = decoder.predict(encoded_sample)
-            song_data.append(decoded_sample)
+        for chunk in wav_data:
+            encoded_chunk = encoder.predict(np.expand_dims(chunk, axis=0), batch_size=1)
+            decoded_chunk = decoder.predict(encoded_chunk)
+            song_data.append(decoded_chunk)
         postprocessor.numpyToWav(song_data, filename[:-3] + '-out.wav')
     
 

@@ -43,7 +43,7 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
     print_summary(autoencoder)
     autoencoder.compile(optimizer=model.get_optimizer(), loss=model.get_loss_function())
 
-    sample_size = model.get_sample_size()
+    input_size = model.get_input_size()
 
     audio_data = get_training_data(npy_file, training_data_path, output_npy)
 
@@ -115,7 +115,7 @@ def get_training_data(npy_file, training_data_path, output_npy):
         audio_files = list(filter(lambda x: x < 90, audio_files))
 
         # convert files to wav and get the numpy representation in parallel
-        audio_data = Pool().map(partial(preprocessor.wav_to_numpy, sample_size=sample_size), audio_files)
+        audio_data = Pool().map(partial(preprocessor.wav_to_numpy, input_size=input_size), audio_files)
         audio_data = np.array([j for i in audio_data for j in i])
 
         print('finished loading audio files.')
