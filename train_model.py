@@ -85,6 +85,10 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
     
 
 def get_song_number_for_filename(filename):
+    '''
+    A function return the song number for the given filename.
+    Format normally is <genre>.xxxxx.au
+    '''
     split_name = filename.split('.')
     if len(split_name) == 3:
         return int(split_name[1])
@@ -112,7 +116,7 @@ def get_training_data(npy_file, training_data_path, output_npy):
         
         audio_files = get_all_files_in_directory(training_data_path, '.au')
         # ignore the last 10% of the audio files for later (proper) validation
-        audio_files = list(filter(lambda x: x < 90, audio_files))
+        audio_files = list(filter(lambda x: get_song_number_for_filename(x) < 90, audio_files))
 
         # convert files to wav and get the numpy representation in parallel
         audio_data = Pool().map(partial(preprocessor.wav_to_numpy, input_size=input_size), audio_files)
