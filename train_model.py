@@ -45,7 +45,7 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
 
     input_size = model.get_input_size()
 
-    audio_data = get_training_data(npy_file, training_data_path, output_npy)
+    audio_data = get_training_data(npy_file, training_data_path, output_npy, input_size)
 
     # where to save the weight improvements during training
     improvement_dir = 'weights_improvement/' + module_name
@@ -83,7 +83,7 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
     
     save_all_models()
 
-def get_training_data(npy_file, training_data_path, output_npy):
+def get_training_data(npy_file, training_data_path, output_npy, input_size):
     '''
     A function to get the training data from either a npy file or a folder of files.
 
