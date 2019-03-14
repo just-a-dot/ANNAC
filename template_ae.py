@@ -33,3 +33,11 @@ class ModelTemplate(ABC):
     @abstractmethod
     def get_input_size(self):
         pass
+
+    @abstractmethod
+    def get_sample_rate(self):
+        pass
+
+    @abstractmethod
+    def use_lstm(self):
+        pass

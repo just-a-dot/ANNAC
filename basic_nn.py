@@ -23,15 +23,17 @@ class AEModel(ModelTemplate):
         input_layer = Input(shape=(self.input_size,))
         encoded_input = Input(shape=(comp_size,))
         
-        autoencoder = Sequential()
-        autoencoder.add(Dense(self.input_size, input_shape=(self.input_size,), activation='relu'))
-        autoencoder.add(Dense(comp_size, activation='sigmoid'))
+        #self.autoencoder.add(Dense(self.input_size, input_shape=(self.input_size,), activation='relu'))
+        encoded = Dense(comp_size, activation='sigmoid')(input_layer)
+        decoded = Dense(self.input_size, activation='sigmoid')(encoded)
 
-        encoder_layer = autoencoder.layers[0]
-        self.encoder = Model(input_layer, encoder_layer(input_layer))
+        self.autoencoder = Model(input_layer, decoded)
+        self.encoder = Model(input_layer, encoded)
 
-        decoder_layer = autoencoder.layers[1]
+        decoder_layer = self.autoencoder.layers[-1]
+        
         self.decoder = Model(encoded_input, decoder_layer(encoded_input))
+
     
     def get_epochs(self):
         return self.epochs
@@ -56,4 +58,10 @@ class AEModel(ModelTemplate):
 
     def get_decoder(self):
         return self.decoder
+
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def use_lstm(self):
+        return False
     

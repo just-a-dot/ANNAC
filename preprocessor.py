@@ -3,7 +3,7 @@ import subprocess
 import numpy as np
 import os
 
-def file_to_np_array(audio_file, input_size):
+def file_to_np_array(audio_file, input_size, song_length_in_frames):
     '''
     A function to turn a wave file into a numpy array.
     If the last sample of the file is not as large as input_size, it is ignored.
@@ -18,11 +18,13 @@ def file_to_np_array(audio_file, input_size):
 
     # get the first frame
     frame = audio_file.readframes(1)
+    frame_counter = 1
 
     # while file not done
     while frame != b'': # b'' = empty byte string
         frames.append(frame)
         frame = audio_file.readframes(1)
+        frame_counter += 1
 
         # we've reached sample size, so turn the previous frames into one sample
         # and clear our the frames array.
@@ -37,6 +39,9 @@ def file_to_np_array(audio_file, input_size):
                 samples.append(i)
             res.append(samples)
             frames = []
+
+        if song_length_in_frames is not None and frame_counter > song_length_in_frames:
+            break
 
     return np.array(res)
 
@@ -60,7 +65,7 @@ def convert_file_to_wav(filename):
 
     return wav_filename
 
-def wav_to_numpy(filename, input_size):
+def wav_to_numpy(filename, input_size, song_length_in_frames=None):
     '''
     A function to convert a file into wav and then into a numpy array.
 
@@ -71,4 +76,4 @@ def wav_to_numpy(filename, input_size):
     '''
     wav_filename = convert_file_to_wav(filename)
     with wave.open(wav_filename) as wav_file:
-        return file_to_np_array(wav_file, input_size)
+        return file_to_np_array(wav_file, input_size, song_length_in_frames)

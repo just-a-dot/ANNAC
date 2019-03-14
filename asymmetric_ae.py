@@ -61,3 +61,9 @@ class AEModel(ModelTemplate):
     def get_decoder(self):
         return self.decoder
     
+    def get_sample_rate(self):
+        return self.sample_rate
+
+    def use_lstm(self):
+        return False
+    

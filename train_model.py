@@ -1,10 +1,9 @@
 import sys
 import getopt
-from multiprocessing import Pool
-from functools import partial
 import numpy as np
 import os
 import signal
+
 
 from keras.utils import print_summary
 from keras.callbacks import ModelCheckpoint
@@ -43,9 +42,7 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
     print_summary(autoencoder)
     autoencoder.compile(optimizer=model.get_optimizer(), loss=model.get_loss_function())
 
-    input_size = model.get_input_size()
-
-    audio_data = get_training_data(npy_file, training_data_path, output_npy, input_size)
+    audio_data = get_training_data(npy_file, training_data_path, output_npy, model)
 
     # where to save the weight improvements during training
     improvement_dir = 'weights_improvement/' + module_name
@@ -83,7 +80,7 @@ def train(module_name, npy_file, training_data_path, output_npy, model_output):
     
     save_all_models()
 
-def get_training_data(npy_file, training_data_path, output_npy, input_size):
+def get_training_data(npy_file, training_data_path, output_npy, model):
     '''
     A function to get the training data from either a npy file or a folder of files.
 
@@ -93,7 +90,7 @@ def get_training_data(npy_file, training_data_path, output_npy, input_size):
 
     :returns: The audio data used for training the model.
     '''
-    
+    input_size = model.get_input_size()
     audio_data = None
     if (npy_file is not None):
         print('\n\n\nUsing previously saved npy-file.')
@@ -107,8 +104,10 @@ def get_training_data(npy_file, training_data_path, output_npy, input_size):
         audio_files = list(filter(lambda x: annac_helper.get_song_number_for_filename(x) < 90, audio_files))
 
         # convert files to wav and get the numpy representation in parallel
-        audio_data = Pool().map(partial(preprocessor.wav_to_numpy, input_size=input_size), audio_files)
-        audio_data = np.array([j for i in audio_data for j in i])
+        if model.use_lstm():
+            audio_data = annac_helper.get_audio_data_for_lstm(audio_files, input_size, model.get_sample_rate()*29, model.chunk_size)
+        else:  
+            audio_data = annac_helper.get_audio_data_normally(audio_files, input_size)
 
         print('finished loading audio files.')
 
@@ -141,8 +140,8 @@ def prepare_npy_data(npy_data):
     '''
     np.random.shuffle(npy_data)
 
-    size, _ = npy_data.shape
-    
+    size = npy_data.shape[0]
+
     npy_data = np.split(npy_data, [round(size*0.9), size])
 
     return npy_data[0], npy_data[1]
