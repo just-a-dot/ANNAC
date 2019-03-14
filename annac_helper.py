@@ -62,7 +62,7 @@ def get_audio_data_for_lstm(audio_files, input_size, song_length_in_frames, chun
     return sequence
 
 def get_audio_data_normally(audio_files, input_size):
-        '''
+    '''
     A function to prepare the audio files in a way suitable for "normal" networks.
 
     :param audio_files: The files we want to get the data from
