@@ -23,14 +23,14 @@ class AEModel(ModelTemplate):
         input_layer = Input(shape=(self.input_size,))
         encoded_input = Input(shape=(comp_size,))
         
-        autoencoder = Sequential()
-        autoencoder.add(Dense(self.input_size, input_shape=(self.input_size,), activation='relu'))
-        autoencoder.add(Dense(comp_size, activation='sigmoid'))
+        self.autoencoder = Sequential()
+        self.autoencoder.add(Dense(comp_size, input_shape=(self.input_size,), activation='relu'))
+        self.autoencoder.add(Dense(self.input_size, activation='sigmoid'))
 
-        encoder_layer = autoencoder.layers[0]
+        encoder_layer = self.autoencoder.layers[0]
         self.encoder = Model(input_layer, encoder_layer(input_layer))
 
-        decoder_layer = autoencoder.layers[1]
+        decoder_layer = self.autoencoder.layers[1]
         self.decoder = Model(encoded_input, decoder_layer(encoded_input))
     
     def get_epochs(self):
