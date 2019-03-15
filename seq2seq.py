@@ -7,7 +7,8 @@ from keras.layers import Input, LSTM, RepeatVector, Dense, TimeDistributed
 class AEModel(ModelTemplate):
     def __init__(self):
         self.sample_rate = 22050
-        self.input_size = 500 # round(self.sample_rate*0.1)
+        self.input_size = 1
+        self.chunk_size = 500 # round(self.sample_rate*0.1)
 
         self.epochs = 100
         self.batch_size = 50
@@ -19,24 +20,26 @@ class AEModel(ModelTemplate):
         
         compression_rate = 0.1
 
-        comp_size = round(compression_rate * self.input_size)
+        comp_size = round(compression_rate * self.chunk_size)
 
-        input_layer = Input(shape=(self.input_size,1))
+        input_layer = Input(shape=(self.chunk_size,self.input_size))
         
         encoded = LSTM(comp_size)(input_layer)
         
-        decoded = RepeatVector(self.input_size)(encoded)
+        decoded = RepeatVector(self.chunk_size)(encoded)
         decoded = LSTM(1, return_sequences=True)(decoded)
-        decoded = TimeDistributed(Dense(1, activation='sigmoid'))(decoded)
+        decoded = TimeDistributed(Dense(self.input_size, activation='sigmoid'))(decoded)
 
         self.autoencoder = Model(input_layer, decoded)
         self.encoder = Model(input_layer, encoded)
         
         # TODO: create a separate decoder
         encoded_input = Input(shape=(comp_size,))
-        decoder_layer = self.autoencoder.layers[-1]
+        decoder_output = self.autoencoder.layers[-3](encoded_input)
+        decoder_output = self.autoencoder.layers[-2](decoder_output)
+        decoder_output = self.autoencoder.layers[-1](decoder_output)
         
-        self.decoder = Model(encoded_input, decoder_layer(encoded_input))
+        self.decoder = Model(encoded_input, decoder_output)
 
     def get_epochs(self):
         return self.epochs
