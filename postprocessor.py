@@ -8,7 +8,7 @@ def numpyToWav(data, outname):
         framerate = 22050
         f.setparams((channels, samplewidth, framerate, 0, 'NONE', 'not compressed'))
         for sample in data:
-            sample = np.fft.ifft(sample)
+            #sample = np.fft.ifft(sample)
             sample = sample.real
             for frame in sample.flatten().tolist():
                 frame = frame * 2

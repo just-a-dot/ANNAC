@@ -105,7 +105,9 @@ decoded = Reshape((chunk_size, size))(decoded)
 autoencoder = Model(inputs, decoded)
 encoder = Model(inputs, encoded)
 
-autoencoder.compile(optimizer=Adam(lr=0.0001), loss='mse')
+autoencoder.load_weights('weights-improvement-125-0.00.hdf5')
+
+autoencoder.compile(optimizer=Adam(lr=0.00001), loss='mse')
 
 
 # Save the weights after each epoch if they improved
@@ -116,14 +118,14 @@ checkpoint = ModelCheckpoint(
     verbose=1,
     save_best_only=True,
     mode='min')
-stopping = EarlyStopping(patience=10)
+stopping = EarlyStopping(patience=1)
 callback_list = [checkpoint, stopping]
 
 
 autoencoder.fit(
     x_train, 
     x_train, 
-    epochs=3000, 
+    epochs=1000, 
     batch_size = 100, 
     validation_data=(x_test, x_test),
     callbacks = callback_list)

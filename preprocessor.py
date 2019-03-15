@@ -21,8 +21,8 @@ def fileToNpArray(f, size, song_length):
             i = i / 2
             # This transformation is reversed in the postprocessor
             sample_base.append(i)
-        res.append(np.fft.fft(sample_base).real)
-        #res.append((sample_base))
+        #res.append(np.fft.fft(sample_base).real)
+        res.append((sample_base))
     return np.array(res)
 
 def transcodeFile(filename):
